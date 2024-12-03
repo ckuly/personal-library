@@ -1,8 +1,6 @@
-from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
-from django.utils.translation.template import context_re
-
-from .models import Book, BookInstance, Author, Genre
+from django.core.paginator import Paginator
+from .models import Book, BookInstance, Author
 from django.views import generic
 
 
@@ -29,7 +27,9 @@ def index(request):
 
 
 def authors(request):
-    authors = Author.objects.all()
+    paginator = Paginator(Author.objects.all(), 1)
+    page_number = request.GET.get('page')
+    authors = paginator.get_page(page_number)
     context = {
         'authors': authors
     }
