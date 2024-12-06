@@ -26,7 +26,7 @@
                           clip-rule="evenodd"/>
                 </svg>
                 {{ user.get_username }}</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'my-borrowed'%}">Mano knygos</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'my-borrowed' %}">Mano knygos</a></li>
             <li class="nav-item">
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
@@ -34,9 +34,10 @@
                 </form>
             </li>
             {% else %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'login'%}">Prisijungti</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Registruotis</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Prisijungti</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Registruotis</a></li>
             {% endif %}
+
             <li class="nav-item active"><a class="nav-link" href="{% url 'index' %}">Pradžia</a></li>
             <li class="nav-item active"><a class="nav-link" href="{% url 'books' %}">Visos knygos</a></li>
             <li class="nav-item active"><a class="nav-link" href="{% url 'authors' %}">Visi autoriai</a></li>
@@ -47,6 +48,14 @@
         </form>
     </div>
 </nav>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'info' %}success{% endif %}"
+     role="alert">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
 <div class="col-sm-10 ">
     {% block content %}
     {% endblock %}
