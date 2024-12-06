@@ -13,19 +13,24 @@ class BookAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'display_genre')
     inlines = [BooksInstanceInline]
 
+
 class AuthorAdmin(admin.ModelAdmin):
     list_display = ('last_name', 'first_name', 'display_books')
 
 
 class BookInstanceAdmin(admin.ModelAdmin):
-    list_display = ('book', 'status', 'due_back')
+    list_display = ('book', 'status', 'reader', 'due_back', 'id')
+    list_editable = ('status', 'due_back')
     list_filter = ('status', 'due_back')
-    list_editable = ('due_back', 'status')
     search_fields = ('id', 'book__title')
 
     fieldsets = (
-        ('General', {'fields': ('id', 'book')}),
-        ('Availability', {'fields': ('status', 'due_back')}),
+        (None, {
+            'fields': ('book', 'id')
+        }),
+        ('Availability', {
+            'fields': ('status', 'due_back', 'reader')
+        }),
     )
 
 
