@@ -32,6 +32,8 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'library',
+    'crispy_forms',
+    'crispy_bootstrap5',
     'tinymce',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -168,3 +170,5 @@ TINYMCE_DEFAULT_CONFIG = {
     'menubar': True,
     'statusbar': True,
     }
+
+CRISPY_TEMPLATE_PACK = 'bootstrap5'
