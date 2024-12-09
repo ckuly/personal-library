@@ -129,3 +129,9 @@ def register(request):
             messages.error(request, 'Slaptažodžiai nesutampa!')
             return redirect('register')
     return render(request, 'register.html')
+
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def profilis(request):
+    return render(request, 'profilis.html')

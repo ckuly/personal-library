@@ -94,3 +94,10 @@ class BookReview(models.Model):
         verbose_name = "Atsiliepimas"
         verbose_name_plural = 'Atsiliepimai'
         ordering = ['-date_created']
+
+class Profilis(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    nuotrauka = models.ImageField(default="profile_pics/default.jpg", upload_to="profile_pics")
+
+    def __str__(self):
+        return f"{self.user.username} profilis"
