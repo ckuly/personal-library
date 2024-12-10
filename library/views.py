@@ -3,13 +3,14 @@ from django.core.paginator import Paginator
 from .models import Book, BookInstance, Author
 from django.views import generic
 from django.db.models import Q
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.contrib.auth.forms import User
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
 from django.views.generic.edit import FormMixin
-from .forms import BookReviewForm, UserUpdateForm, ProfilisUpdateForm
+from .forms import BookReviewForm, UserUpdateForm, ProfilisUpdateForm, UserBookCreateForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView, DeleteView
 
 def index(request):
     num_books = Book.objects.all().count()
@@ -17,7 +18,6 @@ def index(request):
     num_instances_available = BookInstance.objects.filter(status__exact='g').count()
     num_authors = Author.objects.count()
 
-    # Papildome kintamuoju num_visits, įkeliame jį į kontekstą.
 
     num_visits = request.session.get('num_visits', 1)
     request.session['num_visits'] = num_visits + 1
@@ -60,11 +60,9 @@ class BookDetailView(FormMixin, generic.DetailView):
     template_name = 'book_detail.html'
     form_class = BookReviewForm
 
-    # nurodome, kur atsidursime komentaro sėkmės atveju.
     def get_success_url(self):
         return reverse('book-detail', kwargs={'pk': self.object.id})
 
-    # standartinis post metodo perrašymas, naudojant FormMixin, galite kopijuoti tiesiai į savo projektą.
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         form = self.get_form()
@@ -73,7 +71,6 @@ class BookDetailView(FormMixin, generic.DetailView):
         else:
             return self.form_invalid(form)
 
-    # štai čia nurodome, kad knyga bus būtent ta, po kuria komentuojame, o vartotojas bus tas, kuris yra prisijungęs.
     def form_valid(self, form):
         form.instance.book = self.object
         form.instance.reviewer = self.request.user
@@ -92,35 +89,31 @@ def search(request):
     return render(request, 'search.html', {'books': search_results, 'query': query})
 
 
-class LoanedBooksByUserListView(LoginRequiredMixin, generic.ListView):
+class LoanedBooksByUserListView(LoginRequiredMixin, ListView):
     model = BookInstance
+    context_object_name = 'books'
     template_name = 'user_books.html'
     paginate_by = 10
 
     def get_queryset(self):
-        return BookInstance.objects.filter(reader=self.request.user).filter(status__exact='p').order_by('due_back')
+        return BookInstance.objects.filter(reader=self.request.user).order_by('due_back')
 
 @csrf_protect
 def register(request):
     if request.method == "POST":
-        # pasiimame reikšmes iš registracijos formos
         username = request.POST['username']
         email = request.POST['email']
         password = request.POST['password']
         password2 = request.POST['password2']
-        # tikriname, ar sutampa slaptažodžiai
         if password == password2:
-            # tikriname, ar neužimtas username
             if User.objects.filter(username=username).exists():
                 messages.error(request, f'Vartotojo vardas {username} užimtas!')
                 return redirect('register')
             else:
-                # tikriname, ar nėra tokio pat email
                 if User.objects.filter(email=email).exists():
                     messages.error(request, f'Vartotojas su el. paštu {email} jau užregistruotas!')
                     return redirect('register')
                 else:
-                    # jeigu viskas tvarkoje, sukuriame naują vartotoją
                     User.objects.create_user(username=username, email=email, password=password)
                     messages.info(request, f'Vartotojas {username} užregistruotas!')
                     return redirect('login')
@@ -150,3 +143,52 @@ def profilis(request):
         'p_form': p_form,
     }
     return render(request, 'profilis.html', context)
+
+from django.views.generic import (
+    ListView,
+    DetailView,
+    CreateView,
+    UpdateView,
+)
+
+class BookByUserDetailView(LoginRequiredMixin, DetailView):
+    model = BookInstance
+    template_name = 'user_book.html'
+
+class BookByUserCreateView(LoginRequiredMixin, CreateView):
+    model = BookInstance
+    success_url = "/library/mybooks/"
+    template_name = 'user_book_form.html'
+    form_class = UserBookCreateForm
+
+    def form_valid(self, form):
+        form.instance.reader = self.request.user
+        return super().form_valid(form)
+
+from django.contrib.auth.mixins import UserPassesTestMixin
+
+
+class BookByUserUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = BookInstance
+    fields = ['book', 'due_back']
+    success_url = "/library/mybooks/"
+    template_name = 'user_book_form.html'
+
+    def form_valid(self, form):
+        form.instance.reader = self.request.user
+        return super().form_valid(form)
+
+    def test_func(self):
+        book = self.get_object()
+        return self.request.user == book.reader
+
+
+class BookByUserDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = BookInstance
+    success_url = "/library/mybooks/"
+    template_name = 'user_book_delete.html'
+
+    def test_func(self):
+        book = self.get_object()
+        return self.request.user == book.reader
+
